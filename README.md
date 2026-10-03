@@ -57,7 +57,7 @@ The settings page opens by itself after installing. The Gemini URL and models ar
 
 ### 5. Read
 
-Select Chinese text on any page and click the blue **明** button that appears next to it.
+Select Chinese text on any page and click the cat button that appears next to it.
 
 - Move the mouse over a sentence to see its translation.
 - Press a word to see its meaning. Press it again, or press empty space, to go back to the sentence.

@@ -1,13 +1,13 @@
 # Chrome Web Store listing
 
-Everything to paste into the [developer dashboard](https://chrome.google.com/webstore/devconsole). Upload `.output/mingbai-0.1.0-chrome.zip` first (`npm run zip`); the name, summary and icon are read from it.
+Everything to paste into the [developer dashboard](https://chrome.google.com/webstore/devconsole). Upload `.output/mingbai-0.1.1-chrome.zip` first (`npm run zip`); the name, summary and icon are read from it.
 
 ## Store listing
 
 **Description**
 
 ```
-Mingbai 明白 helps you read Chinese on any web page. Select some Chinese text, click the blue 明 button, and read it with:
+Mingbai 明白 helps you read Chinese on any web page. Select some Chinese text, click the cat button that appears next to it, and read it with:
 
 • Pinyin above every word. The text is split into real words, not single characters.
 • An English translation of each sentence.

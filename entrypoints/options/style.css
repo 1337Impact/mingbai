@@ -39,14 +39,8 @@ header {
 }
 
 .logo {
-  display: grid;
-  place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: 11px;
-  background: var(--blue);
-  color: #fff;
-  font: 500 22px 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
 }
 
 h1 {

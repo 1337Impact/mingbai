@@ -1,3 +1,5 @@
+import type { SvgNode } from '@/lib/cat-icon';
+
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className = '',
@@ -30,6 +32,16 @@ function icon(paths: string[], filled = false): SVGSVGElement {
     svg.append(path);
   }
   return svg;
+}
+
+/** Builds an SVG element from its description, for artwork with more than plain paths. */
+export function svgElement([tag, attrs, children = []]: SvgNode): SVGElement {
+  const node = document.createElementNS(SVG_NS, tag);
+  for (const [name, value] of Object.entries(attrs)) {
+    if (name !== 'xmlns') node.setAttribute(name, value);
+  }
+  node.append(...children.map(svgElement));
+  return node;
 }
 
 const BOOKMARK = 'M6 4h12a1 1 0 0 1 1 1v15l-7-4.5L5 20V5a1 1 0 0 1 1-1z';

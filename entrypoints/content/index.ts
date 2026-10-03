@@ -1,4 +1,5 @@
-import { el } from './dom';
+import { CAT_FACE } from '@/lib/cat-icon';
+import { el, svgElement } from './dom';
 import { Popup } from './popup';
 import css from './style.css?inline';
 
@@ -118,7 +119,8 @@ export default defineContentScript({
       if (pointer && distance(end, pointer) > MAX_DISTANCE_FROM_POINTER) end = pointer;
       const maxLeft = document.documentElement.clientWidth - 38;
 
-      trigger = el('button', 'trigger', '明');
+      trigger = el('button', 'trigger');
+      trigger.append(svgElement(CAT_FACE));
       trigger.type = 'button';
       trigger.title = 'Translate with Mingbai';
       trigger.setAttribute('aria-label', 'Translate selection');
