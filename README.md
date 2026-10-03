@@ -22,13 +22,17 @@ It is free to use: it runs on your own API key, and Google's Gemini API has a fr
 
 ## Use it for free
 
-You need Chrome, [Node.js](https://nodejs.org) 22 or newer, and a Google account.
+You need Chrome and a Google account.
 
 ### 1. Get a free Gemini API key
 
 Open [Google AI Studio](https://aistudio.google.com/apikey), sign in and create an API key.
 
-### 2. Build the extension
+### 2. Get the extension
+
+**Download a release (easiest).** Go to the [latest release](https://github.com/1337Impact/mingbai/releases/latest), download the `mingbai-…-chrome.zip` file and unzip it. Keep the unzipped folder somewhere permanent, because Chrome loads the extension from it every time it starts.
+
+**Or build it from source.** This needs [Node.js](https://nodejs.org) 22 or newer:
 
 ```bash
 git clone https://github.com/1337Impact/mingbai.git
@@ -41,7 +45,9 @@ npm run build
 
 1. Open `chrome://extensions`.
 2. Turn on **Developer mode** (top right).
-3. Click **Load unpacked** and choose the `.output/chrome-mv3` folder.
+3. Click **Load unpacked** and choose the unzipped folder, or `.output/chrome-mv3` if you built from source.
+
+To update later, download the new release, replace the folder's contents and click the reload arrow on the extension's card.
 
 ### 4. Add your key
 
