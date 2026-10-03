@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="manifest.open_in_tab" content="true" />
+    <title>Hanzi Lens</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="logo" aria-hidden="true">文</span>
+        <h1>Hanzi Lens</h1>
+      </header>
+
+      <nav class="tabs" role="tablist">
+        <button type="button" role="tab" id="tab-settings" aria-controls="panel-settings" aria-selected="true">
+          Settings
+        </button>
+        <button type="button" role="tab" id="tab-saved" aria-controls="panel-saved" aria-selected="false">
+          Saved words <span id="saved-count" class="count"></span>
+        </button>
+      </nav>
+
+      <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings">
+        <p class="lead">
+          Hanzi Lens works with any OpenAI-compatible chat completions API. Text you choose to
+          translate is sent to the API below. Your key is stored only in this browser.
+        </p>
+        <form id="settings-form" novalidate>
+          <label for="baseURL">API URL</label>
+          <input id="baseURL" name="baseURL" type="url" spellcheck="false" autocomplete="off"
+            placeholder="https://openrouter.ai/api/v1" />
+          <p class="hint">The base URL, without <code>/chat/completions</code>.</p>
+
+          <label for="apiKey">API key</label>
+          <div class="with-button">
+            <input id="apiKey" name="apiKey" type="password" spellcheck="false" autocomplete="off" />
+            <button type="button" id="toggle-key" class="secondary">Show</button>
+          </div>
+          <p class="hint">Leave empty for local servers that need no key.</p>
+
+          <label for="model">Model ID</label>
+          <input id="model" name="model" type="text" spellcheck="false" autocomplete="off"
+            placeholder="qwen/qwen3.8-27b:free" />
+
+          <details>
+            <summary>Advanced</summary>
+            <label for="extraBody">Extra request parameters</label>
+            <textarea id="extraBody" name="extraBody" rows="3" spellcheck="false"
+              placeholder='{"temperature": 0.2}'></textarea>
+            <p class="hint">
+              Optional JSON object merged into every request, for provider-specific options such as
+              turning off reasoning to get faster replies.
+            </p>
+          </details>
+
+          <div class="buttons">
+            <button type="submit">Save</button>
+            <button type="button" id="test" class="secondary">Save and test</button>
+          </div>
+          <p id="status" class="status" role="status"></p>
+        </form>
+      </section>
+
+      <section id="panel-saved" role="tabpanel" aria-labelledby="tab-saved" hidden>
+        <div class="saved-head">
+          <p class="lead">Words you saved from the popup.</p>
+          <button type="button" id="export" class="secondary">Export CSV</button>
+        </div>
+        <p id="saved-empty" class="empty">
+          No saved words yet. Press a word in the popup, then the bookmark button.
+        </p>
+        <table id="saved-table" hidden>
+          <thead>
+            <tr>
+              <th>Word</th>
+              <th>Meaning</th>
+              <th>Sentence</th>
+              <th><span class="sr-only">Remove</span></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

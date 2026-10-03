@@ -1,0 +1,8 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "types": ["chrome"]
+  },
+  "exclude": ["tests", "scripts", ".output"]
+}
