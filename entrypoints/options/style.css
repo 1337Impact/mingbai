@@ -55,6 +55,12 @@ h1 {
   font-weight: 600;
 }
 
+.zh-name {
+  margin-left: 4px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
 .tabs {
   display: flex;
   gap: 4px;
@@ -135,6 +141,10 @@ summary:focus-visible {
   margin: 6px 0 0;
   color: var(--muted);
   font-size: 13px;
+}
+
+a {
+  color: var(--accent);
 }
 
 code {

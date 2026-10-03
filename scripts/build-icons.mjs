@@ -16,7 +16,7 @@ for (const size of SIZES) {
     <body style="margin:0;background:transparent">
       <div style="width:${size}px;height:${size}px;border-radius:${size * 0.24}px;background:#2f93d6;
         display:grid;place-items:center;color:#fff;
-        font:500 ${size * 0.64}px/1 'PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif">文</div>
+        font:500 ${size * 0.64}px/1 'PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif">明</div>
     </body>`);
   await page.screenshot({ path: `${outDir}${size}.png`, omitBackground: true });
 }

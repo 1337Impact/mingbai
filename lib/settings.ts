@@ -1,10 +1,13 @@
 import type { Settings } from './types';
 
 export const DEFAULT_SETTINGS: Settings = {
-  baseURL: 'https://openrouter.ai/api/v1',
+  // Gemini, because Google AI Studio gives out API keys with a free tier.
+  baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
   apiKey: '',
-  model: 'qwen/qwen3.8-27b:free',
+  model: 'gemini-3.5-flash-lite',
   extraBody: '',
+  ttsModel: 'gemini-3.8-flash-lite-tts',
+  ttsVoice: 'Fola',
 };
 
 const KEY = 'settings';

@@ -17,6 +17,8 @@ const fields = {
   apiKey: $<HTMLInputElement>('apiKey'),
   model: $<HTMLInputElement>('model'),
   extraBody: $<HTMLTextAreaElement>('extraBody'),
+  ttsModel: $<HTMLInputElement>('ttsModel'),
+  ttsVoice: $<HTMLInputElement>('ttsVoice'),
 };
 const status = $('status');
 const testButton = $<HTMLButtonElement>('test');
@@ -32,6 +34,8 @@ function readForm(): Settings {
     apiKey: fields.apiKey.value.trim(),
     model: fields.model.value.trim(),
     extraBody: fields.extraBody.value.trim(),
+    ttsModel: fields.ttsModel.value.trim(),
+    ttsVoice: fields.ttsVoice.value.trim(),
   };
 }
 
@@ -169,7 +173,7 @@ exportButton.addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob(['﻿', toCsv(saved)], { type: 'text/csv;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'hanzi-lens-words.csv';
+  link.download = 'mingbai-words.csv';
   link.click();
   URL.revokeObjectURL(url);
 });
@@ -186,6 +190,8 @@ void loadSettings().then((settings) => {
   fields.apiKey.value = settings.apiKey;
   fields.model.value = settings.model;
   fields.extraBody.value = settings.extraBody;
+  fields.ttsModel.value = settings.ttsModel;
+  fields.ttsVoice.value = settings.ttsVoice;
 });
 void loadSaved().then((words) => {
   saved = words;

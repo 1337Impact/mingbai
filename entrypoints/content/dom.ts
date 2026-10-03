@@ -45,6 +45,8 @@ export const icons = {
       'M15 9V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h4',
     ]),
   check: () => icon(['M5 12.5l4.5 4.5L19 7.5']),
+  /** Three quarters of a circle; rotated by the `.busy` style. */
+  spinner: () => icon(['M12 3a9 9 0 1 0 9 9']),
 };
 
 /** Copies text to the clipboard. Returns false if the page does not allow it. */

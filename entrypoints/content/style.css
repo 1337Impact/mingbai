@@ -151,6 +151,22 @@
   background: rgba(59, 111, 158, 0.13);
 }
 
+.icon-btn.busy svg {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-btn.busy svg {
+    animation-duration: 2.4s;
+  }
+}
+
 .icon-btn.on {
   color: #2e8f72;
 }

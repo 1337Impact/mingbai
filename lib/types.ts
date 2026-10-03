@@ -1,10 +1,13 @@
 export interface Settings {
-  /** Base URL of an OpenAI-compatible API, e.g. https://openrouter.ai/api/v1 */
+  /** Base URL of an OpenAI-compatible API, e.g. https://generativelanguage.googleapis.com/v1beta/openai/ */
   baseURL: string;
   apiKey: string;
   model: string;
   /** Optional JSON object merged into the chat completion request body. */
   extraBody: string;
+  /** Model for the listen button, called at {baseURL}/audio/speech. Empty uses the browser's voice. */
+  ttsModel: string;
+  ttsVoice: string;
 }
 
 /** One piece of the selected text. Tokens concatenate back to the exact selection. */
@@ -28,6 +31,12 @@ export interface TranslateRequest {
   /** Skip the cache, used by the settings page connection test. */
   noCache?: boolean;
 }
+
+/** Background's answer to a `speak` message. `browser` means no speech model is set. */
+export type SpeakResponse =
+  | { type: 'audio'; base64: string }
+  | { type: 'browser' }
+  | { type: 'error'; message: string };
 
 export interface SavedWord {
   hanzi: string;

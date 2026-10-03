@@ -4,40 +4,65 @@ import css from './style.css?inline';
 
 const HAN = /\p{Script=Han}/u;
 
-const shadowRootsIn = (path: EventTarget[]) => path.filter((node) => node instanceof ShadowRoot);
 const hasSize = (rect: DOMRect) => rect.width > 0 || rect.height > 0;
-
 const withoutSpaces = (text: string) => text.replace(/\s+/g, '');
 
+/** How far from the mouse the button may be placed before it goes by the mouse instead. */
+const MAX_DISTANCE_FROM_POINTER = 250;
+
+function distance(rect: DOMRect, point: DOMRect): number {
+  const dx = Math.max(rect.left - point.x, 0, point.x - rect.right);
+  const dy = Math.max(rect.top - point.y, 0, point.y - rect.bottom);
+  return Math.max(dx, dy);
+}
+
+function shadowRootOf(node: Node | undefined): ShadowRoot | null {
+  if (!(node instanceof HTMLElement)) return null;
+  return node.shadowRoot ?? chrome.dom?.openOrClosedShadowRoot(node) ?? null;
+}
+
 /**
- * A range to position the popup by, and whether it covers the selection exactly.
+ * The selection's real endpoints, including inside shadow DOM.
  *
- * For text inside shadow DOM the regular API only gives a collapsed range at
- * the shadow host, so the real one has to be asked for by naming the shadow
- * roots it may be in.
+ * Chrome only reveals an endpoint inside a shadow root it is told about, and
+ * otherwise reports the outermost host it was not told about. So the roots are
+ * found by asking, descending into the hosts that come back, and asking again.
  */
-function selectedRange(selection: Selection, shadowRoots: ShadowRoot[]): { range: Range; exact: boolean } | null {
-  if (shadowRoots.length > 0) {
-    try {
-      const composed = selection.getComposedRanges({ shadowRoots })[0];
-      if (composed && !composed.collapsed) {
-        const root = composed.startContainer.getRootNode();
-        const range = document.createRange();
-        range.setStart(composed.startContainer, composed.startOffset);
-        if (composed.endContainer.getRootNode() === root) {
-          range.setEnd(composed.endContainer, composed.endOffset);
-          return { range, exact: true };
-        }
-        // A live range cannot cross a shadow boundary, and a triple-click ends
-        // just outside the component it was made in. Keep the part inside.
-        if (root instanceof ShadowRoot) {
-          range.setEnd(root, root.childNodes.length);
-          return { range, exact: false };
-        }
+function composedRange(selection: Selection): StaticRange | null {
+  const shadowRoots: ShadowRoot[] = [];
+  for (let depth = 0; depth < 30; depth++) {
+    const range = selection.getComposedRanges({ shadowRoots })[0];
+    if (!range) return null;
+    const { startContainer, startOffset, endContainer, endOffset } = range;
+    const hosts = [startContainer.childNodes[startOffset], endContainer.childNodes[endOffset - 1], endContainer.childNodes[endOffset]];
+    const found = hosts.map(shadowRootOf).filter((root) => root !== null && !shadowRoots.includes(root));
+    if (found.length === 0) return range;
+    shadowRoots.push(...(found as ShadowRoot[]));
+  }
+  return null;
+}
+
+/** A range to position the popup by, and whether it covers the selection exactly. */
+function selectedRange(selection: Selection): { range: Range; exact: boolean } | null {
+  try {
+    const composed = composedRange(selection);
+    if (composed && !composed.collapsed) {
+      const root = composed.startContainer.getRootNode();
+      const range = document.createRange();
+      range.setStart(composed.startContainer, composed.startOffset);
+      if (composed.endContainer.getRootNode() === root) {
+        range.setEnd(composed.endContainer, composed.endOffset);
+        return { range, exact: true };
       }
-    } catch {
-      // Older Chrome: fall through to the regular range.
+      // A live range cannot cross a shadow boundary, and a triple-click ends
+      // just outside the component it was made in. Keep the part inside.
+      if (root instanceof ShadowRoot) {
+        range.setEnd(root, root.childNodes.length);
+        return { range, exact: false };
+      }
     }
+  } catch {
+    // Older Chrome without getComposedRanges: fall through to the regular range.
   }
   return selection.rangeCount > 0 ? { range: selection.getRangeAt(0).cloneRange(), exact: true } : null;
 }
@@ -49,13 +74,11 @@ export default defineContentScript({
     let shadow: ShadowRoot | null = null;
     let trigger: HTMLButtonElement | null = null;
     let popup: Popup | null = null;
-    /** Shadow roots under the last press, where a drag selection starts. */
-    let pressRoots: ShadowRoot[] = [];
 
     // Created on the first Chinese selection, so other pages are left untouched.
     function ensureShadow(): ShadowRoot {
       if (shadow && host?.isConnected) return shadow;
-      host = document.createElement('hanzi-lens');
+      host = document.createElement('mingbai-root');
       host.style.cssText = 'position:absolute;top:0;left:0;z-index:2147483647;';
       shadow = host.attachShadow({ mode: 'open' });
       const sheet = new CSSStyleSheet();
@@ -82,19 +105,22 @@ export default defineContentScript({
     }
 
     /** Positioned by `range` when the selection could be measured, else by where the mouse was released. */
-    function showTrigger(text: string, range: Range | null, pointer: DOMRect): void {
+    function showTrigger(text: string, range: Range | null, pointer: DOMRect | null): void {
       hideTrigger();
       const anchor = () => {
         const rect = range?.getBoundingClientRect();
-        return rect && hasSize(rect) ? rect : pointer;
+        return rect && hasSize(rect) ? rect : pointer!;
       };
       const rects = range?.getClientRects();
-      const end = rects?.[rects.length - 1] ?? anchor();
+      let end = rects?.[rects.length - 1] ?? anchor();
+      // The button must end up where the user is looking. A selection made
+      // backwards, or one that runs off screen, ends far from the mouse.
+      if (pointer && distance(end, pointer) > MAX_DISTANCE_FROM_POINTER) end = pointer;
       const maxLeft = document.documentElement.clientWidth - 38;
 
-      trigger = el('button', 'trigger', '文');
+      trigger = el('button', 'trigger', '明');
       trigger.type = 'button';
-      trigger.title = 'Translate with Hanzi Lens';
+      trigger.title = 'Translate with Mingbai';
       trigger.setAttribute('aria-label', 'Translate selection');
       trigger.style.left = `${Math.max(4, Math.min(end.right + 6, maxLeft)) + window.scrollX}px`;
       trigger.style.top = `${end.bottom + 6 + window.scrollY}px`;
@@ -111,7 +137,6 @@ export default defineContentScript({
       // Read now: the path is gone once the event has finished dispatching.
       const path = event.composedPath();
       if (host && path.includes(host)) return;
-      const shadowRoots = [...new Set([...pressRoots, ...shadowRootsIn(path)])];
       const pointer = event instanceof MouseEvent ? new DOMRect(event.clientX, event.clientY, 0, 0) : null;
 
       // The selection is only final after the event has finished dispatching.
@@ -123,16 +148,16 @@ export default defineContentScript({
           hideTrigger();
           return;
         }
-        const found = selectedRange(selection, shadowRoots);
+        const found = selectedRange(selection);
         const rect = found?.range.getBoundingClientRect();
         if (!found || !rect || !hasSize(rect)) {
-          // Nothing measurable, as in closed shadow roots.
+          // Nothing measurable: go by where the mouse was released.
           if (pointer) showTrigger(text, null, pointer);
           return;
         }
         // A partial range is only trusted when it holds the whole selected text.
         const trusted = found.exact || withoutSpaces(found.range.toString()) === withoutSpaces(text);
-        showTrigger(text, trusted || !pointer ? found.range : null, pointer ?? rect);
+        showTrigger(text, trusted || !pointer ? found.range : null, pointer);
       });
     }
 
@@ -148,9 +173,7 @@ export default defineContentScript({
     document.addEventListener(
       'mousedown',
       (event) => {
-        const path = event.composedPath();
-        if (host && path.includes(host)) return;
-        pressRoots = shadowRootsIn(path);
+        if (host && event.composedPath().includes(host)) return;
         hideTrigger();
         closePopup();
       },

@@ -1,8 +1,8 @@
 import hskLevels from '@/assets/hsk.json';
 import { cacheKey, getCached, putCached } from '@/lib/cache';
-import { describeError, translate } from '@/lib/llm';
+import { describeError, synthesize, translate } from '@/lib/llm';
 import { isConfigured, loadSettings, validateSettings } from '@/lib/settings';
-import { TRANSLATE_PORT, type TranslateEvent, type TranslateRequest } from '@/lib/types';
+import { TRANSLATE_PORT, type SpeakResponse, type TranslateEvent, type TranslateRequest } from '@/lib/types';
 
 const hsk = hskLevels as Record<string, number>;
 
@@ -13,8 +13,12 @@ export default defineBackground(() => {
     if (reason === 'install') void chrome.runtime.openOptionsPage();
   });
 
-  chrome.runtime.onMessage.addListener((message) => {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type === 'openOptions') void chrome.runtime.openOptionsPage();
+    if (message?.type === 'speak') {
+      void handleSpeak(String(message.text)).then(sendResponse);
+      return true; // The response is sent asynchronously.
+    }
   });
 
   chrome.runtime.onConnect.addListener((port) => {
@@ -26,6 +30,17 @@ export default defineBackground(() => {
     });
   });
 });
+
+async function handleSpeak(text: string): Promise<SpeakResponse> {
+  const settings = await loadSettings();
+  if (!settings.ttsModel.trim()) return { type: 'browser' };
+  try {
+    // Messages are JSON, so the audio travels as base64.
+    return { type: 'audio', base64: await synthesize(text, settings) };
+  } catch (error) {
+    return { type: 'error', message: describeError(error) };
+  }
+}
 
 async function handleTranslate(
   port: chrome.runtime.Port,

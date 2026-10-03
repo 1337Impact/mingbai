@@ -31,6 +31,10 @@ export class Popup {
   private readonly root = el('div', 'popup');
   private readonly main = el('div', 'panel-main');
   private readonly note = el('div', 'note');
+  private readonly audioNote = el('div', 'note');
+  private readonly listenButton: HTMLButtonElement;
+  /** Counts presses of the listen button, to tell the latest one apart. */
+  private listens = 0;
   private readonly saveButton: HTMLButtonElement;
   private readonly copyButton: HTMLButtonElement;
   private copiedTimer: ReturnType<typeof setTimeout> | undefined;
@@ -49,18 +53,19 @@ export class Popup {
     this.view = new TextView(text);
     this.saveButton = iconButton('Save word', icons.bookmark(), () => void this.toggleSaved());
     this.copyButton = iconButton('Copy', icons.copy(), () => void this.copy());
+    this.listenButton = iconButton('Listen', icons.speaker(), () => void this.listen());
 
     const actions = el('div', 'actions');
     actions.append(
       this.copyButton,
-      iconButton('Listen', icons.speaker(), () => this.listen()),
+      this.listenButton,
       this.saveButton,
       iconButton('Close', icons.close(), () => this.onClose()),
     );
     const panel = el('div', 'panel');
     panel.append(this.main, actions);
-    this.note.hidden = true;
-    this.root.append(panel, this.view.root, this.note);
+    this.note.hidden = this.audioNote.hidden = true;
+    this.root.append(panel, this.view.root, this.note, this.audioNote);
 
     // Keep the page's selection while the popup is being used.
     this.root.addEventListener('mousedown', (event) => event.preventDefault());
@@ -121,7 +126,7 @@ export class Popup {
       this.port.postMessage({ text } satisfies TranslateRequest);
     } catch {
       // Happens on tabs that were open while the extension was updated or reloaded.
-      this.fail({ type: 'error', code: 'api', message: 'Hanzi Lens was updated. Reload this page to use it.' });
+      this.fail({ type: 'error', code: 'api', message: 'Mingbai was updated. Reload this page to use it.' });
     }
   }
 
@@ -204,9 +209,20 @@ export class Popup {
     this.renderPanel();
   }
 
-  private listen(): void {
-    const text = this.selected?.token.text ?? this.active?.text;
-    if (text?.trim()) speak(text);
+  private async listen(): Promise<void> {
+    const text = (this.selected?.token.text ?? this.active?.text)?.trim();
+    if (!text) return;
+    this.audioNote.hidden = true;
+    const mine = ++this.listens;
+    this.setListenButton(true);
+    const problem = await speak(text);
+    // A newer press owns the button now; let it clear the spinner.
+    if (mine !== this.listens) return;
+    this.setListenButton(false);
+    if (problem) {
+      this.audioNote.textContent = `Could not play audio. ${problem}`;
+      this.audioNote.hidden = false;
+    }
   }
 
   /** Copies what the top panel shows: the pressed word, or the sentence's translation. */
@@ -224,6 +240,14 @@ export class Popup {
     this.copyButton.title = label;
     this.copyButton.setAttribute('aria-label', label);
     this.copyButton.replaceChildren(copied ? icons.check() : icons.copy());
+  }
+
+  private setListenButton(loading: boolean): void {
+    const label = loading ? 'Loading audio' : 'Listen';
+    this.listenButton.classList.toggle('busy', loading);
+    this.listenButton.title = label;
+    this.listenButton.setAttribute('aria-label', label);
+    this.listenButton.replaceChildren(loading ? icons.spinner() : icons.speaker());
   }
 
   private async toggleSaved(): Promise<void> {

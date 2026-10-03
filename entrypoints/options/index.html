@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="manifest.open_in_tab" content="true" />
-    <title>Hanzi Lens</title>
+    <title>Mingbai 明白</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <main>
       <header>
-        <span class="logo" aria-hidden="true">文</span>
-        <h1>Hanzi Lens</h1>
+        <span class="logo" aria-hidden="true">明</span>
+        <h1>Mingbai <span class="zh-name" lang="zh">明白</span></h1>
       </header>
 
       <nav class="tabs" role="tablist">
@@ -25,13 +25,13 @@
 
       <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings">
         <p class="lead">
-          Hanzi Lens works with any OpenAI-compatible chat completions API. Text you choose to
+          Mingbai works with any OpenAI-compatible chat completions API. Text you choose to
           translate is sent to the API below. Your key is stored only in this browser.
         </p>
         <form id="settings-form" novalidate>
           <label for="baseURL">API URL</label>
           <input id="baseURL" name="baseURL" type="url" spellcheck="false" autocomplete="off"
-            placeholder="https://openrouter.ai/api/v1" />
+            placeholder="https://generativelanguage.googleapis.com/v1beta/openai/" />
           <p class="hint">The base URL, without <code>/chat/completions</code>.</p>
 
           <label for="apiKey">API key</label>
@@ -39,11 +39,31 @@
             <input id="apiKey" name="apiKey" type="password" spellcheck="false" autocomplete="off" />
             <button type="button" id="toggle-key" class="secondary">Show</button>
           </div>
-          <p class="hint">Leave empty for local servers that need no key.</p>
+          <p class="hint">
+            For the default Gemini setup, get a free key from
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Google AI Studio</a>.
+            Leave empty for local servers that need no key.
+          </p>
 
           <label for="model">Model ID</label>
           <input id="model" name="model" type="text" spellcheck="false" autocomplete="off"
-            placeholder="qwen/qwen3.8-27b:free" />
+            placeholder="gemini-3.5-flash-lite" />
+
+          <label for="ttsModel">Speech model ID</label>
+          <input id="ttsModel" name="ttsModel" type="text" spellcheck="false" autocomplete="off"
+            placeholder="gemini-3.8-flash-lite-tts" />
+          <p class="hint">
+            Used by the listen button, through the same API URL and key
+            (<code>/audio/speech</code>, or Gemini's own speech API for a Gemini URL). Leave empty
+            to use the browser's built-in voice.
+          </p>
+
+          <label for="ttsVoice">Voice</label>
+          <input id="ttsVoice" name="ttsVoice" type="text" spellcheck="false" autocomplete="off"
+            placeholder="Fola" />
+          <p class="hint">
+            A voice name your provider offers for the speech model. Leave empty for the default.
+          </p>
 
           <details>
             <summary>Advanced</summary>

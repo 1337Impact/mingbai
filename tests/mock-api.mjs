@@ -58,7 +58,10 @@ const PAGE = `<!doctype html>
     <script>
       for (const mode of ['open', 'closed']) {
         const outer = document.getElementById(mode + '-shadow').attachShadow({ mode });
-        const inner = outer.appendChild(document.createElement('div')).attachShadow({ mode });
+        const frame = outer.appendChild(document.createElement('div'));
+        frame.style.cssText = 'padding: 0 0 0 60px; display: flex; gap: 0';
+        const inner = frame.appendChild(document.createElement('div')).attachShadow({ mode });
+        frame.appendChild(document.createElement('div')).style.cssText = 'flex: 1';
         const p = inner.appendChild(document.createElement('p'));
         p.id = 'contents';
         p.textContent = '${SHADOW_TEXT}';
@@ -73,9 +76,34 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-/** Starts the server. `chunkDelay` is the pause in ms between streamed chunks. */
-export async function startMockApi({ chunkDelay = 5 } = {}) {
+/** A short beep as a 16-bit mono WAV, standing in for synthesised speech. */
+function beep() {
+  const rate = 8000;
+  const samples = rate * 0.15;
+  const wav = Buffer.alloc(44 + samples * 2);
+  wav.write('RIFF', 0);
+  wav.writeUInt32LE(36 + samples * 2, 4);
+  wav.write('WAVEfmt ', 8);
+  wav.writeUInt32LE(16, 16);
+  wav.writeUInt16LE(1, 20); // PCM
+  wav.writeUInt16LE(1, 22); // mono
+  wav.writeUInt32LE(rate, 24);
+  wav.writeUInt32LE(rate * 2, 28);
+  wav.writeUInt16LE(2, 32);
+  wav.writeUInt16LE(16, 34);
+  wav.write('data', 36);
+  wav.writeUInt32LE(samples * 2, 40);
+  for (let i = 0; i < samples; i++) wav.writeInt16LE(Math.round(8000 * Math.sin((i / rate) * 2 * Math.PI * 440)), 44 + i * 2);
+  return wav;
+}
+
+/**
+ * Starts the server. `chunkDelay` is the pause in ms between streamed chunks,
+ * `speechDelay` how long a speech request takes.
+ */
+export async function startMockApi({ chunkDelay = 5, speechDelay = 300 } = {}) {
   const requests = [];
+  const speechRequests = [];
 
   const server = createServer(async (req, res) => {
     if (req.method === 'OPTIONS') {
@@ -90,11 +118,23 @@ export async function startMockApi({ chunkDelay = 5 } = {}) {
     let raw = '';
     for await (const chunk of req) raw += chunk;
     const body = JSON.parse(raw);
-    requests.push({ url: req.url, authorization: req.headers.authorization, body });
+    const speech = req.url === '/v1/audio/speech';
+    (speech ? speechRequests : requests).push({ url: req.url, authorization: req.headers.authorization, body });
 
     if (req.headers.authorization !== 'Bearer test-key') {
       res.writeHead(401, { ...CORS, 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: { message: 'Invalid API key', code: 401 } }));
+      return;
+    }
+
+    if (speech) {
+      await new Promise((resolve) => setTimeout(resolve, speechDelay));
+      if (body.model !== 'mock-tts') {
+        res.writeHead(404, { ...CORS, 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { message: `No such model: ${body.model}`, code: 404 } }));
+        return;
+      }
+      res.writeHead(200, { ...CORS, 'Content-Type': 'audio/wav' }).end(beep());
       return;
     }
 
@@ -112,5 +152,5 @@ export async function startMockApi({ chunkDelay = 5 } = {}) {
 
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const origin = `http://127.0.0.1:${server.address().port}`;
-  return { origin, baseURL: `${origin}/v1`, requests, close: () => server.close() };
+  return { origin, baseURL: `${origin}/v1`, requests, speechRequests, close: () => server.close() };
 }
